@@ -1,0 +1,131 @@
+from requests import get
+from web3 import Web3
+w3_scroll = Web3(Web3.HTTPProvider('https://1rpc.io/scroll'))
+
+kf = 10**18
+nka = 7
+
+def monets():
+    global eth
+    url = "https://api.routescan.io/v2/network/mainnet/evm/1/etherscan/api?module=stats&action=ethprice"
+    response = get(url)
+    data = response.json()
+    b = data['result']
+    eth = float(b['ethusd'])
+    print(f'ETH: {eth}')
+    pass
+
+monets()
+
+def trans(adr):
+    transactions = []
+    url = (f'https://api.scrollscan.com/api?module=account&action=txlist'+
+           f'&address={adr}'+
+           f'&startblock=0&endblock=9999999999'+
+           f'&page=1&offset=9999&sort=asc')
+    response = get(url)
+    data = response.json()
+    bs = data['result']
+    for i2 in range(len(bs)):
+        transactions.append(bs[i2])
+    return transactions
+
+class scroll:
+
+    def __init__(self, a, adr):
+        self.THx = a
+        self.gasUsed = 0
+        self.balance = 0
+        self.komsa = 0
+        self.count = 0
+        self.adr = adr
+        self.val3 = 0
+
+    def gasUseds(self):
+        for i in range(len(self.THx)):
+            g = int((self.THx[i])['gasUsed'])
+            p = int((self.THx[i])['gasPrice'])
+            t2 = (g * p) / kf
+            self.gasUsed = round(self.gasUsed + t2, nka)
+        return self.gasUsed
+
+    def balances(self):
+        self.balance = w3_scroll.eth.get_balance(w3_scroll.to_checksum_address(self.adr))/kf
+        self.balance = float(round(self.balance, nka))
+        return self.balance
+
+    def komsas(self):
+        for i in range(len(self.THx)):
+            v = int((self.THx[i])['value']) / kf
+            if v == 0:
+                pass
+            elif 0.1 > v:
+                v2 = v / 100 * 0.3
+            else:
+                v2 = v / 100 * 0.65
+            self.komsa = round(self.komsa + v2, nka)
+        return self.komsa
+
+    def values(self):
+        for i in range(len(self.THx)):
+            self.val3 += int((self.THx[i])['value']) / kf * 2
+        return self.val3
+
+    def th_counts(self):
+        for i in range(len(self.THx)):
+            self.count +=1
+        return self.count
+
+    def unik_dates(self):
+        days =[]; months =[]; years =[]
+
+        for i in range(len(self.THx)):
+            stamp = (self.THx[i])['timeStamp']
+            day = datetime.utcfromtimestamp(int(stamp)).strftime('%d-%m-%y')
+            if day not in days: days.append(day)
+            month = datetime.utcfromtimestamp(int(stamp)).strftime('%m|%Y')
+            if month not in months: months.append(month)
+            year = datetime.utcfromtimestamp(int(stamp)).strftime('%Y')
+            if year not in years: years.append(year)
+        d_m_y = {
+            'day': len(days),
+            'month': len(months),
+            "year": len(years)
+        }
+        return d_m_y
+
+    def contracts(self):
+        vt = []
+        for i in range(len(self.THx)):
+            if (self.THx[i])['from'] not in vt:
+                vt.append((self.THx[i])['from'])
+
+            if (self.THx[i])['to'] not in vt:
+                vt.append((self.THx[i])['to'])
+
+        self.contract = vt
+        return self.contract
+
+from datetime import *
+from time import *
+
+def otvetka(waliks):
+    for i in range(len(waliks)):
+        thx = trans(waliks[i])
+        zapros = scroll(thx, waliks[i])
+
+        otvet = {'WALLET': waliks[i]}
+        otvet['COUNT'] = (zapros.th_counts())
+        otvet['GASused'] = round(zapros.gasUseds() * eth * 5, 4)
+        otvet['ETH'] = (round(zapros.balances(), 4))
+        otvet['KOMSA'] = (round(zapros.komsas() * eth, 4))
+        otvet['VALUE'] = round(zapros.values() * eth, 2)
+        otvet['CONTRACTs'] = (len(zapros.contracts()))
+        otvet['DMY'] = (zapros.unik_dates())
+        print(otvet)
+        sleep(0.5)
+
+    pass
+
+waliks2 = ['adress', 'asdress 2', '...']
+otvetka(waliks2)
